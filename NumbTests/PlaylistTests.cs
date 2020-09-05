@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Numb;
 using Xunit;
@@ -20,7 +21,7 @@ namespace NumbTests
             playlist.Tracks.ElementAt(0).Should().Be(track2);
             playlist.Tracks.ElementAt(1).Should().Be(track);
         }
-        
+
         [Fact]
         public void Playlist_AddTrack_ShouldInsertAfterExistingTrack()
         {
@@ -32,6 +33,15 @@ namespace NumbTests
             playlist.AddTrack(track2);
             playlist.Tracks.ElementAt(0).Should().Be(track);
             playlist.Tracks.ElementAt(1).Should().Be(track2);
+        }
+
+        [Fact]
+        public async Task Playlist_IsSteady()
+        {
+            var ts = new TracksSource();
+            var playlist = new Playlist(ts, 2);
+            await playlist.Start();
+            playlist.IsSteady.Should().BeTrue();
         }
     }
 }

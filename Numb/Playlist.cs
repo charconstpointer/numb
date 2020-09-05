@@ -1,23 +1,61 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Numb
 {
     public class Playlist
     {
+        public Playlist(uint checks = 5)
+        {
+            _checks = checks;
+        }
+
+        public Playlist(ITracksSource tracksSource, uint checks = 5)
+        {
+            _tracksSource = tracksSource;
+            _checks = checks;
+        }
+
+        private int TrackCount => _tracks.Count;
+        private readonly ITracksSource _tracksSource;
+        private readonly uint _checks = 5;
         private readonly LinkedList<ITrack> _tracks = new LinkedList<ITrack>();
-        private bool _isSteady = false;
         public IEnumerable<ITrack> Tracks => _tracks.ToImmutableList();
 
-        private void OnTick()
+        public bool IsSteady { get; private set; }
+
+
+        public async Task Start()
         {
-            while (!_isSteady)
+            var checks = 0;
+            while (!IsSteady)
             {
-                _isSteady = true;
+                var tracks = await _tracksSource.GetAsync();
+                var tracksList = tracks.ToList();
+                if (++checks == _checks)
+                {
+                    IsSteady = true;
+                }
+
+                if (tracksList.Count != TrackCount)
+                {
+                    foreach (var track in tracksList)
+                    {
+                        AddTrack(track);
+                    }
+
+                    checks = 0;
+                }
+                else
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(100));
+                }
             }
         }
-        
+
         public void AddTrack(ITrack track)
         {
             if (!_tracks.Any())
@@ -44,8 +82,13 @@ namespace Numb
                 current = current.Next;
             }
 
-            _tracks.AddFirst(track);
+            var first = _tracks.First;
+            if (first?.Value.Start == track.Start && first.Value.Stop == track.Stop)
+            {
+                return;
+            }
 
+            _tracks.AddFirst(track);
         }
     }
 }
