@@ -9,4 +9,8 @@
       <ProjectReference Include="..\Numb\Numb.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="System.Net.Http.Json" Version="3.2.1" />
+    </ItemGroup>
+
 </Project>

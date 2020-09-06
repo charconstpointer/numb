@@ -24,6 +24,7 @@ namespace Numb
         private readonly uint _checks = 5;
         private readonly LinkedList<ITrack> _tracks = new LinkedList<ITrack>();
         public IEnumerable<ITrack> Tracks => _tracks.ToImmutableList();
+        public event EventHandler<TrackChanged<ITrack>> TrackChanged;
 
         public bool IsSteady { get; private set; }
 
@@ -33,25 +34,38 @@ namespace Numb
             var checks = 0;
             while (!IsSteady)
             {
-                var tracks = await _tracksSource.GetAsync();
-                var tracksList = tracks.ToList();
-                if (++checks == _checks)
+                try
                 {
-                    IsSteady = true;
-                }
-
-                if (tracksList.Count != TrackCount)
-                {
-                    foreach (var track in tracksList)
+                    var tracks = await _tracksSource.GetAsync();
+                    var tracksList = tracks.ToList();
+                    if (++checks == _checks)
                     {
-                        AddTrack(track);
+                        IsSteady = true;
+                        Console.WriteLine("Steady✅");
+                        return;
                     }
 
-                    checks = 0;
+                    if (tracksList.Count != TrackCount)
+                    {
+                        foreach (var track in tracksList)
+                        {
+                            AddTrack(track);
+                        }
+
+                        checks = 0;
+
+                        await Task.Delay(TimeSpan.FromSeconds(3));
+                    }
+                    else
+                    {
+                        TrackChanged.Invoke(null, null);
+                        await Task.Delay(TimeSpan.FromSeconds(3));
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(100));
+                    Console.WriteLine(e);
+                    throw;
                 }
             }
         }
@@ -89,6 +103,11 @@ namespace Numb
             }
 
             _tracks.AddFirst(track);
+        }
+
+        public void OnChange()
+        {
+            throw new NotImplementedException();
         }
     }
 }
