@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Numb
 {
@@ -10,31 +11,45 @@ namespace Numb
             new ConcurrentDictionary<string, Playlist>();
 
         private readonly Thread _watcher;
+        private readonly Thread _stabilizer;
         private readonly TimeSpan _tickDelay;
         private readonly CancellationToken _cancellationToken = new CancellationToken();
         public CancellationToken CancellationToken => _cancellationToken;
         public event EventHandler<TrackChanged<ITrack>> TrackChanged;
+
         public Watcher()
         {
             _watcher = new Thread(OnTick)
             {
                 IsBackground = true
             };
-            _tickDelay = TimeSpan.FromSeconds(1);
-        }
-
-        public Watcher(TimeSpan timeSpan)
-        {
-            _watcher = new Thread(OnTick)
+            _stabilizer = new Thread(async () => await Stabilize())
             {
                 IsBackground = true
             };
-            _tickDelay = timeSpan;
+            _tickDelay = TimeSpan.FromSeconds(1);
+        }
+
+        private async Task Stabilize()
+        {
+            while (!_cancellationToken.IsCancellationRequested)
+            {
+                foreach (var playlistsKey in _playlists.Keys)
+                {
+                    if (!_playlists.TryGetValue(playlistsKey, out var playlist)) continue;
+                    if (playlist.IsStable) continue;
+                    await playlist.Stabilize();
+                }
+
+                Console.WriteLine("Stabilizer");
+                Thread.Sleep(10000);
+            }
         }
 
         public void Start()
         {
             _watcher.Start();
+            _stabilizer.Start();
         }
 
         private void OnTick()
@@ -52,7 +67,7 @@ namespace Numb
                     OnTrackChanged(channel.Name, current, next);
                 }
 
-                Console.WriteLine("Tick");
+                Console.WriteLine("Ticker");
                 Thread.Sleep(1000);
             }
         }
@@ -77,7 +92,7 @@ namespace Numb
                 }
             }
         }
-        
+
         private void OnTrackChanged(string channel, ITrack current, ITrack next)
         {
             TrackChanged?.Invoke(this, new TrackChanged<ITrack>
