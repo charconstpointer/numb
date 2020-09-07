@@ -14,8 +14,10 @@ namespace Runner
                 .WithSource(rks)
                 .OnChange(e => Console.WriteLine("hi there"))
                 .Build();
-
+    
             await playlist.Start();
+            Console.WriteLine("done");
+            Console.ReadKey();
         }
     }
 }
