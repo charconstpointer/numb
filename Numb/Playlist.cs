@@ -50,6 +50,8 @@ namespace Numb
             return playlist;
         }
 
+        //TODO Should also check for tracks to remove
+        //
         public async Task Stabilize()
         {
             var tracks = await _tracksSource.GetAsync();
@@ -59,8 +61,8 @@ namespace Numb
                 IsStable = true;
                 return;
             }
-
-            if (tracksList.Count != TracksCount)
+            //TODO I could recreate LL everytime playlist changes instead of maintaining old one, TBD
+            if (tracksList.Count > TracksCount)
             {
                 foreach (var track in tracksList)
                 {
