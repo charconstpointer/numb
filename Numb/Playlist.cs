@@ -34,75 +34,71 @@ namespace Numb
             var checks = 0;
             while (!IsStable)
             {
-                try
+                var tracks = await _tracksSource.GetAsync();
+                var tracksList = tracks.ToList();
+                if (++checks == _checks)
                 {
-                    var tracks = await _tracksSource.GetAsync();
-                    var tracksList = tracks.ToList();
-                    if (++checks == _checks)
-                    {
-                        IsStable = true;
-                        Console.WriteLine("Playlist is stable ✅");
-                        return;
-                    }
-
-                    if (tracksList.Count != TrackCount)
-                    {
-                        foreach (var track in tracksList)
-                        {
-                            AddTrack(track);
-                        }
-
-                        checks = 0;
-
-                        await Task.Delay(TimeSpan.FromSeconds(3));
-                    }
-                    else
-                    {
-                        TrackChanged?.Invoke(null, null);
-                        await Task.Delay(TimeSpan.FromSeconds(3));
-                    }
+                    IsStable = true;
+                    Console.WriteLine("Playlist is stable ✅");
+                    return;
                 }
-                catch (Exception e)
+
+                if (tracksList.Count != TrackCount)
                 {
-                    Console.WriteLine(e);
-                    throw;
+                    foreach (var track in tracksList)
+                    {
+                        AddTrack(track);
+                    }
+
+                    checks = 0;
+
+                    await Task.Delay(TimeSpan.FromSeconds(3));
+                }
+                else
+                {
+                    TrackChanged?.Invoke(null, null);
+                    await Task.Delay(TimeSpan.FromSeconds(3));
                 }
             }
         }
 
-        public void AddTrack(ITrack track)
+        //TODO Clean this shit up 🎃
+        private void AddTrack(ITrack track)
         {
-            if (!_tracks.Any())
+            lock (track)
             {
-                _tracks.AddFirst(track);
-                return;
-            }
-
-            var current = _tracks.Last;
-            if (current == null)
-            {
-                _tracks.AddFirst(track);
-                return;
-            }
-
-            while (current != null)
-            {
-                if (current.Value.Stop < track.Start)
+                if (!_tracks.Any())
                 {
-                    _tracks.AddAfter(current, track);
+                    _tracks.AddFirst(track);
                     return;
                 }
 
-                current = current.Next;
-            }
+                var current = _tracks.Last;
+                if (current == null)
+                {
+                    _tracks.AddFirst(track);
+                    return;
+                }
 
-            var first = _tracks.First;
-            if (first?.Value.Start == track.Start && first.Value.Stop == track.Stop)
-            {
-                return;
-            }
+                while (current != null)
+                {
+                    if (current.Value.Stop < track.Start)
+                    {
+                        _tracks.AddAfter(current, track);
+                        return;
+                    }
 
-            _tracks.AddFirst(track);
+                    current = current.Next;
+                }
+
+                var first = _tracks.First;
+                if (first?.Value.Start == track.Start && first.Value.Stop == track.Stop)
+                {
+                    return;
+                }
+
+                _tracks.AddFirst(track);
+            }
         }
 
         public void OnChange()
