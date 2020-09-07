@@ -28,7 +28,7 @@ namespace Numb
 
         public bool IsSteady { get; private set; }
 
-
+        
         public async Task Start()
         {
             var checks = 0;
