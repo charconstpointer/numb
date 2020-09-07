@@ -26,5 +26,11 @@ namespace Runner
         public string Image { get; set; }
         public DateTime Start { get; set; }
         public DateTime Stop { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Title}" +
+                   $", {Artist}";
+        }
     }
 }

@@ -8,16 +8,16 @@ namespace Runner
     {
         private static async Task Main()
         {
-            var rks = new RkSource();
-            var playlist = new PlaylistBuilder()
-                .WithChecks(3)
-                .WithSource(rks)
-                .OnChange(e => Console.WriteLine("hi there"))
-                .Build();
-    
-            await playlist.Start();
-            Console.WriteLine("done");
+            var source = new RkSource();
+            var playlist = await Playlist.CreateWith(source);
+            var watcher = new Watcher();
+            watcher.AddTarget("keyName", playlist);
+            watcher.Start();
+            watcher.TrackChanged += (sender, changed) => Console.WriteLine($"{changed}");
             Console.ReadKey();
+            // await playlist.Start();
+            // Console.WriteLine("done");
+            // Console.ReadKey();
         }
     }
 }
