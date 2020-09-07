@@ -26,13 +26,13 @@ namespace Numb
         public IEnumerable<ITrack> Tracks => _tracks.ToImmutableList();
         public event EventHandler<TrackChanged<ITrack>> TrackChanged;
 
-        public bool IsSteady { get; private set; }
+        public bool IsStable { get; private set; }
 
-        
+
         public async Task Start()
         {
             var checks = 0;
-            while (!IsSteady)
+            while (!IsStable)
             {
                 try
                 {
@@ -40,8 +40,8 @@ namespace Numb
                     var tracksList = tracks.ToList();
                     if (++checks == _checks)
                     {
-                        IsSteady = true;
-                        Console.WriteLine("Steady✅");
+                        IsStable = true;
+                        Console.WriteLine("Playlist is stable ✅");
                         return;
                     }
 
@@ -58,7 +58,7 @@ namespace Numb
                     }
                     else
                     {
-                        TrackChanged.Invoke(null, null);
+                        TrackChanged?.Invoke(null, null);
                         await Task.Delay(TimeSpan.FromSeconds(3));
                     }
                 }

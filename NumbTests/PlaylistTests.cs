@@ -41,7 +41,7 @@ namespace NumbTests
             var ts = new TracksSource();
             var playlist = new Playlist(ts, 2);
             await playlist.Start();
-            playlist.IsSteady.Should().BeTrue();
+            playlist.IsStable.Should().BeTrue();
         }
     }
 }
